@@ -51,6 +51,16 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        
+        # self.w = nn.Parameter(1, dimensions)
+        self.b1 = nn.Parameter(1, 512) # 1st bias and weight layers
+        self.w1 = nn.Parameter(1, 512) 
+        self.b2 = nn.Parameter(1, 1) # 2nd bias and weight layers
+        self.w2 = nn.Parameter(512, 1)
+
+        # Other parameters given
+        self.learning_rate = 0.05 # Param update size/iter
+        self.batch_size = 200 # Samples taken before update
 
     def run(self, x):
         """
@@ -62,6 +72,16 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        # Rectified Linear unit activation 
+        lyr = nn.Linear(x, self.w1) # Input transformation from 1d to 512d
+        lyr = nn.AddBias(lyr, self.b1) # Applies the bias
+        lyr = nn. ReLU(lyr) # Replaces all neg nums with 0, introduces Non-linearity
+
+        # Output formatting
+        result = nn.Linear(lyr, self.w2) # Transformation back to 1d
+        result = nn.AddBias(result, self.w2) # adds the 2nd bias to the result
+
+        return result
 
     def get_loss(self, x, y):
         """
@@ -74,12 +94,55 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        # Get predictions for loss calculation
+        predicted = self.run(x) # model esitmations
+
+        result = nn.SquareLoss(predicted, y) # compare to true nodes
+
+        return result # returns scaler representing total error
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        # Until convergence continue training
+        converged = False
+
+        while not converged:
+
+            # Track the loss across for this session
+            total_loss = 0
+            total_batches = 0
+
+            for input, target in dataset.iterate_once(self.batch_size):
+                
+                current_loss = self.get_loss(input, target) # loss calculation
+
+                # Gradients 
+                grad_b1 = nn.gradients(current_loss, self.b1)
+                grad_w1 = nn.gradients(current_loss, self.w1)
+                grad_b2 = nn.gradients(current_loss, self.b2)
+                grad_w2 = nn.gradients(current_loss, self.w2)
+
+                # Param update
+                # parameter = parameter - learning_rate * gradients 
+                self.w1.update(grad_w1, -self.learning_rate) # -self.learning_rate to minimize loss
+                self.b1.update(grad_b1, -self.learning_rate)
+                self.w2.update(grad_w2, -self.learning_rate)
+                self.b2.update(grad_b2, -self.learning_rate)
+
+                # Track Loss
+                total_loss += nn.as_scalar(current_loss)
+                total_batches += 1
+
+            # Calculate loss
+            average_loss = total_loss / total_batches
+
+            # Convergence Flag
+            if average_loss < 0.02: # Given convergence ideals
+                converged = True
+
 
 class DigitClassificationModel(object):
     """
