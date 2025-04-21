@@ -53,14 +53,15 @@ class RegressionModel(object):
         "*** YOUR CODE HERE ***"
         
         # self.w = nn.Parameter(1, dimensions)
-        self.b1 = nn.Parameter(1, 512) # 1st bias and weight layers
-        self.w1 = nn.Parameter(1, 512) 
-        self.b2 = nn.Parameter(1, 1) # 2nd bias and weight layers
-        self.w2 = nn.Parameter(512, 1)
-
+        self.w1 = nn.Parameter(1, 512)  # 1st weight layer: input dim 1, output dim 512
+        self.b1 = nn.Parameter(1, 512) 
+        self.w2 = nn.Parameter(512, 1)  # 2nd weight layer: input dim 512, output dim 1
+        self.b2 = nn.Parameter(1, 1)    
+        
         # Other parameters given
         self.learning_rate = 0.05 # Param update size/iter
-        self.batch_size = 200 # Samples taken before update
+        self.batch_size = 100 # Samples taken before update, 
+                              # 200 was too high, this quick turnaround yields better results
 
     def run(self, x):
         """
@@ -75,11 +76,11 @@ class RegressionModel(object):
         # Rectified Linear unit activation 
         lyr = nn.Linear(x, self.w1) # Input transformation from 1d to 512d
         lyr = nn.AddBias(lyr, self.b1) # Applies the bias
-        lyr = nn. ReLU(lyr) # Replaces all neg nums with 0, introduces Non-linearity
+        lyr = nn.ReLU(lyr) # Replaces all neg nums with 0, introduces Non-linearity
 
         # Output formatting
         result = nn.Linear(lyr, self.w2) # Transformation back to 1d
-        result = nn.AddBias(result, self.w2) # adds the 2nd bias to the result
+        result = nn.AddBias(result, self.b2) # adds the 2nd bias to the result
 
         return result
 
@@ -120,11 +121,9 @@ class RegressionModel(object):
                 current_loss = self.get_loss(input, target) # loss calculation
 
                 # Gradients 
-                grad_b1 = nn.gradients(current_loss, self.b1)
-                grad_w1 = nn.gradients(current_loss, self.w1)
-                grad_b2 = nn.gradients(current_loss, self.b2)
-                grad_w2 = nn.gradients(current_loss, self.w2)
-
+                grads = nn.gradients(current_loss, [self.w1, self.b1, self.w2, self.b2])
+                grad_w1, grad_b1, grad_w2, grad_b2 = grads  # unpack into separate variables
+                
                 # Param update
                 # parameter = parameter - learning_rate * gradients 
                 self.w1.update(grad_w1, -self.learning_rate) # -self.learning_rate to minimize loss
@@ -161,6 +160,15 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.w1 = nn.Parameter(784, 200) # Input to hidden layer weights
+        self.b1 = nn.Parameter(1,200) # Hidden lyaer bias
+        self.w2 = nn.Parameter(200, 10) # Hidden layer to digit classes
+        self.b2 = nn.Parameter(1, 10) # Digit class bias
+
+        # Given hyperparameters
+        self.learning_rate = 0.5
+        self.batch_size = 100 
+
 
     def run(self, x):
         """
@@ -177,6 +185,17 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        # Run linear transformation
+        # First Layer Transformation done with ReLU
+        lyr = nn.Linear(x, self.w1) # Apply weight to reggression
+        lyr = nn.AddBias(lyr, self.b1) # Bias translation
+        lyr = nn.ReLU(lyr) # Activation
+
+
+        #Transform second without ReLU
+        result = nn.Linear(lyr, self.w2)
+
+        return nn.AddBias(result, self.b2)
 
     def get_loss(self, x, y):
         """
@@ -193,11 +212,16 @@ class DigitClassificationModel(object):
         """
         "*** YOUR CODE HERE ***"
 
+        # Run batch and compute loss
+        return nn.SoftmaxLoss(self.run(x), y)
+
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        
+
 
 class LanguageIDModel(object):
     """
