@@ -220,8 +220,23 @@ class DigitClassificationModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-        
+        # Set accuracy target
 
+        target_accuracy = .975 # a bit higher than 97 for grading consistency
+
+        while dataset.get_validation_accuracy() < target_accuracy:
+            # Process batches
+            for x, y in dataset.iterate_once(self.batch_size):
+                # Get loss
+                loss = self.get_loss(x,y)
+
+                gradient_calcs = nn.gradients(loss, [self.w1, self.b1, self.w2, self.b2])
+
+                # Update weights and bias with gradients
+                self.w1.update(gradient_calcs[0], -self.learning_rate)
+                self.b1.update(gradient_calcs[1], -self.learning_rate)
+                self.w2.update(gradient_calcs[2], -self.learning_rate)
+                self.b2.update(gradient_calcs[3], -self.learning_rate)
 
 class LanguageIDModel(object):
     """
